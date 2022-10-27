@@ -15,6 +15,7 @@ The scale is limited by the source data to about 100 meters per pixel
 
 ## Sample heightmap
 I included two coordinate sets of Mt. Fuji and the Dreisam area for reference. Below is a Mt. Fuji heightmap at a scale of 200 meters per pixel.
+
 ![富士山](/sample.png)
 
 
