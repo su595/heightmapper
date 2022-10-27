@@ -4,12 +4,12 @@ from math import sin, cos, sqrt, atan2
 import requests
 import json
 
-DREISAM_UL = (48.154658, 7.615669)
+DREISAM_UL = (48.154658, 7.615669) # sample coordinates
 DREISAM_LR = (47.861023, 8.055387)
-UL_FUJI = (35.49495, 138.56429) # sample coordinates
+UL_FUJI = (35.49495, 138.56429) 
 LR_FUJI = (35.24691, 138.88908)
 PATH = "/home/yannick/Pictures/" # picture output path, including a / at the end
-MAX_API_CALLS = 1000000 # to avoid waiting for 10mins for one picture
+MAX_API_CALLS = 1000000 # to avoid waiting for 10mins for one map
 POINTS_PER_ITERATION = 800 # 800 is a good value
 
 
@@ -111,7 +111,7 @@ def post_elevations(point_list): # returns a list of elevations for the points u
 def map_range(val, in_min, in_max, out_min, out_max): # map val proportionally to new range, just like arduino map() function
     return (val - in_min) * (out_max - out_min) // (in_max - in_min) + out_min
     
-def get_distance_between_coords(coord1, coord2): # returns the absolute distance between 2 coordinates, accurate to 4 sf
+def get_distance_between_coords(coord1, coord2): # returns the distance in meters between 2 coordinates, accurate to 4 sf or whole meters
     # everything to 4 sf
     # source: https://www.movable-type.co.uk/scripts/latlong.html
     lat1 = coord1[0]
