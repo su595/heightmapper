@@ -1,6 +1,6 @@
 # heightmapper
 
-This program creates custom heightmaps.
+This program creates custom heightmaps. It is not very practical, because it uses an unreliable API to get the elevation data. It is rather meant as a programming exercise.
 
 ## Usage
 
@@ -13,10 +13,11 @@ It will display and optionally save a heightmap with the specified parameters.
 
 The scale is limited by the source data to about 100 meters per pixel
 
-## Sample heightmap
-I included two coordinate sets of Mt. Fuji and the Dreisam area for reference. Below is a Mt. Fuji heightmap at a scale of 200 meters per pixel.
+## Examples
+I pre-defined some coordinate sets for testing. Below is a Mt. Fuji heightmap at a scale of 200 meters per pixel.
 
-![富士山](/sample.png)
+![富士山](/sample1.png)
 
+This is Fukuoka city at a scale of 300 meters per pixel.
 
-This is a (arguably worse) replacement for the website terrain.party which no longer works :'(
+![福岡市](/sample2.png)

@@ -3,21 +3,24 @@ from PIL import Image
 from math import sin, cos, sqrt, atan2
 import requests
 import json
+from time import sleep
 
-DREISAM_UL = (48.154658, 7.615669) # sample coordinates
+DREISAM_UL = (48.154658, 7.615669) # sample coordinates of the Dreisam in Freiburg, Germany
 DREISAM_LR = (47.861023, 8.055387)
-UL_FUJI = (35.49495, 138.56429) 
+UL_FUJI = (35.49495, 138.56429) # Mount Fuji
 LR_FUJI = (35.24691, 138.88908)
-PATH = "/home/yannick/Pictures/" # picture output path, including a / at the end
+UL_FUKUOKA = (33.64958719796769, 130.04789758733244) # Fukuoka city
+LR_FUKUOKA = (33.42752389014788, 130.64939902233962)
 MAX_API_CALLS = 1000000 # to avoid waiting for 10mins for one map
-POINTS_PER_ITERATION = 800 # 800 is a good value
+POINTS_PER_ITERATION = 2000 # if you request many points at once, the api often doesn't respond
+WAIT = 60 # wait makes the program wait between requesting elevation values. This can be useful if you get a lot of api errors
 
 
 # upper_left_corner and lower_right_corner are coordinate points (latitude, longitude) forming the boundaries of a rectangular heightmap 
-# scale is meters per pixel (limited to ~100 by underlying data)
-# path is the destination of the generated heightmap
-def make_heightmap(ul_corner,lr_corner, scale, path=False):
-
+# scale in meters per pixel (most accurate possible is 100, appropriate scale depends on)
+# path is the destination of the generated heightmap !!! "/" at the end !!!
+# if no path is given, the heightmap will only be displayed and not saved
+def make_heightmap(ul_corner, lr_corner, scale, path=False):
     distance_x = get_distance_between_coords(ul_corner, (ul_corner[0], lr_corner[1]))
     distance_y = get_distance_between_coords(ul_corner, (lr_corner[0], ul_corner[1]))
     print(distance_x)
@@ -32,9 +35,9 @@ def make_heightmap(ul_corner,lr_corner, scale, path=False):
     print(lon_steps)
 
     # safety stop
+    # this prevents the creation of maps that are too large with a too small scale
     if (pixels_y*pixels_x) > MAX_API_CALLS:
-        # this doesn't prevent naturally large maps with reasonable scale, but only maps with unreasonable scale
-        print("Scale is too small, the image would have {0} individual pixels! (more than {1}! :O) ".format(pixels_x*pixels_y, MAX_API_CALLS))
+        print("WTF you tryna do man! This shit's gonna mess up the mainframe!\nScale is too small, the image would have {0} individual pixels! (more than {1}! :O) ".format(pixels_x*pixels_y, MAX_API_CALLS))
         return
 
     confirm = input("This will produce an image of {0}*{1} pixels with a total of {2} pixels, are you sure? (y/N) ".format(pixels_x, pixels_y, pixels_x*pixels_y))
@@ -67,16 +70,22 @@ def make_heightmap(ul_corner,lr_corner, scale, path=False):
     heightmap = Image.fromarray(map_array, 'L')
     heightmap.show()
 
-    # if path was given and isn't the default False
+    # if path was given, save the heightmap there
     if path:
         heightmap.save("{0}{1},{2},{3}.png".format(path, ul_corner[0], ul_corner[1], scale), format="PNG")
 
 def post_elevations(point_list): # returns a list of elevations for the points using api.open-elevation.com
+    # because of limitations of the api, we can only request POINTS_PER_ITERATION elevation values at once
+    # so we have to split up the point list into multiple requests
+    # and then combine the temporary partial lists into the final list
+
+    # also, I chose to hard-code the api url, because if one changes the api, it is likely that the data format needs to be changed as well
+    
     iterations = ((len(point_list) - len(point_list)%POINTS_PER_ITERATION)//POINTS_PER_ITERATION) + 1
     all_temp_elevations = []
     point_i = 0
     for iteration_no in range(iterations):
-        # progress meter
+        # progress display
         print(".", end="")
         temp_elevations = []
         data = {"locations": []}
@@ -94,11 +103,18 @@ def post_elevations(point_list): # returns a list of elevations for the points u
 
         newHeaders = {'Content-type': 'application/json', 'Accept': 'application/json'}
         response = requests.post("https://api.open-elevation.com/api/v1/lookup", data=json_data, headers=newHeaders)
-
+        
+        # response.ok is a paramenter of the post-request. if it is false, something went wrong with the API and we have to try again
+        if not response.ok:
+            raise Exception("Server-side error. Please try again")
+            
         for result in response.json()["results"]:
             temp_elevations.append((result["elevation"]))
         
         all_temp_elevations.append(temp_elevations)
+
+        sleep(WAIT)
+
     
     # combines the smaller temp_elevations into one large elevations list
     elevations = []
@@ -108,12 +124,13 @@ def post_elevations(point_list): # returns a list of elevations for the points u
             
     return elevations
 
-def map_range(val, in_min, in_max, out_min, out_max): # map val proportionally to new range, just like arduino map() function
+def map_range(val, in_min, in_max, out_min, out_max): # map value proportionally to new range, just like arduino map() function
     return (val - in_min) * (out_max - out_min) // (in_max - in_min) + out_min
     
 def get_distance_between_coords(coord1, coord2): # returns the distance in meters between 2 coordinates, accurate to 4 sf or whole meters
     # everything to 4 sf
     # source: https://www.movable-type.co.uk/scripts/latlong.html
+    # i didn't try to do this complicated math myself
     lat1 = coord1[0]
     lon1 = coord1[1]
     lat2 = coord2[0]
@@ -131,6 +148,7 @@ def get_distance_between_coords(coord1, coord2): # returns the distance in meter
 
     return int(round(R * c, 0)) # in whole metres
 
-
-make_heightmap(UL_FUJI,LR_FUJI, 200, PATH)
+# use google maps to find the upper-left and lower-right corner of any area you want, and then make a heightmap!
+# the free api is not very reliable, but I can't change that (except  by paying money)
+make_heightmap(UL_FUKUOKA,LR_FUKUOKA, 300)
 
